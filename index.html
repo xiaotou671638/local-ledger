@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#174b83">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="随手记账">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>随手记账</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><div><small>PERSONAL LEDGER</small><h1>随手记账</h1></div><button id="settingsBtn" class="iconbtn" aria-label="设置">⚙</button></header>
+<main>
+  <section class="hero">
+    <div class="row between"><span>本月概览</span><select id="overviewCurrency"><option value="JPY">日元 JPY</option><option value="CNY">人民币 CNY</option></select></div>
+    <div class="muted light" id="monthLabel"></div>
+    <div class="balance" id="balance">¥0</div><div class="muted light">本月结余</div>
+    <div class="stats"><div><small>收入</small><strong id="income">¥0</strong></div><div><small>支出</small><strong id="expense">¥0</strong></div></div>
+  </section>
+  <section class="panel">
+    <div class="row between"><h2>本月预算</h2><button class="textbtn" id="budgetBtn">设置预算</button></div>
+    <div class="row between small"><span id="budgetSpent">已支出 ¥0</span><span id="budgetTotal">预算 ¥0</span></div>
+    <div class="progress"><i id="budgetProgress"></i></div><p id="budgetAlert" class="hint"></p>
+  </section>
+  <section class="quick">
+    <button class="primary" id="addExpense">＋ 记支出</button><button class="secondary" id="addIncome">＋ 记收入</button>
+  </section>
+  <section class="panel">
+    <div class="row between"><h2>账单记录</h2><span id="count" class="muted small">0 笔</span></div>
+    <input id="search" placeholder="搜索名称、分类或备注">
+    <div class="filters">
+      <select id="typeFilter"><option value="all">全部类型</option><option value="expense">支出</option><option value="income">收入</option></select>
+      <select id="currencyFilter"><option value="all">全部币种</option><option>JPY</option><option>CNY</option></select>
+      <label><input type="checkbox" id="monthOnly" checked> 只看本月</label>
+    </div>
+    <div id="entries" class="entries"></div>
+  </section>
+  <section class="panel">
+    <div class="row between"><h2>统计分析</h2><select id="chartCurrency"><option>JPY</option><option>CNY</option></select></div>
+    <div class="chartTitle">近 6 个月支出趋势</div><div id="trend" class="bars"></div>
+    <div class="chartTitle">本月分类支出</div><div id="categories" class="categoryList"></div>
+  </section>
+  <section class="panel">
+    <div class="row between"><h2>工具</h2></div>
+    <div class="toolgrid">
+      <button id="recurringBtn">定期账单</button><button id="rateBtn">汇率换算</button>
+      <button id="exportCsv">导出 CSV</button><button id="backupBtn">备份 / 恢复</button>
+    </div>
+  </section>
+</main>
+<nav class="bottom"><span>🏠 首页</span><span>💴 日元 · 人民币</span><span id="localStatus">● 本地保存</span></nav>
+
+<dialog id="entryDialog">
+<form method="dialog" id="entryForm">
+<div class="dialogHead"><h2 id="entryTitle">记一笔</h2><button class="x" value="cancel">×</button></div>
+<div class="seg"><button type="button" data-type="expense" class="chosen">支出</button><button type="button" data-type="income">收入</button></div>
+<label>金额<input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="输入金额" required></label>
+<label>币种<select id="currency"><option value="JPY">日元 JPY</option><option value="CNY">人民币 CNY</option></select></label>
+<label>分类<select id="category"></select></label>
+<label>名称<input id="title" maxlength="60" placeholder="例如：午餐、工资"></label>
+<label>日期<input id="date" type="date" required></label>
+<label>备注<textarea id="note" rows="2" maxlength="300"></textarea></label>
+<button class="primary full" id="saveEntry" value="save">保存账单</button>
+</form></dialog>
+
+<dialog id="settingsDialog">
+<form method="dialog">
+<div class="dialogHead"><h2>设置</h2><button class="x" value="cancel">×</button></div>
+<label>日元月预算<input id="budgetJPY" type="number" min="0" step="1"></label>
+<label>人民币月预算<input id="budgetCNY" type="number" min="0" step="0.01"></label>
+<label>1 人民币兑换日元<input id="rate" type="number" min="0.01" step="0.01"></label>
+<p class="hint">汇率手动设置，仅用于参考换算，不会改变原始账单金额。</p>
+<button class="primary full" id="saveSettings" value="save">保存设置</button>
+</form></dialog>
+
+<dialog id="recurringDialog">
+<form method="dialog" id="recurringForm">
+<div class="dialogHead"><h2>定期账单</h2><button class="x" value="cancel">×</button></div>
+<div id="recurringItems"></div><hr>
+<h3>新增模板</h3>
+<label>名称<input id="recTitle" required placeholder="例如：房租"></label>
+<label>金额<input id="recAmount" type="number" min="0.01" step="0.01" required></label>
+<label>币种<select id="recCurrency"><option>JPY</option><option>CNY</option></select></label>
+<label>类型<select id="recType"><option value="expense">支出</option><option value="income">收入</option></select></label>
+<label>每月几号生成<input id="recDay" type="number" min="1" max="31" value="25"></label>
+<button class="primary full" id="saveRecurring" value="save">添加定期账单</button>
+</form></dialog>
+
+<dialog id="rateDialog">
+<form method="dialog"><div class="dialogHead"><h2>汇率换算</h2><button class="x" value="cancel">×</button></div>
+<p class="hint" id="rateText"></p>
+<label>金额<input id="convertAmount" type="number" step="0.01" value="100"></label>
+<div class="row"><select id="fromCurrency"><option>CNY</option><option>JPY</option></select><span>⇄</span><select id="toCurrency"><option>JPY</option><option>CNY</option></select></div>
+<h2 id="convertResult"></h2><button type="button" class="primary full" id="doConvert">换算</button></form></dialog>
+
+<dialog id="backupDialog">
+<form method="dialog"><div class="dialogHead"><h2>备份 / 恢复</h2><button class="x" value="cancel">×</button></div>
+<p class="hint">加密备份使用 AES-GCM。请牢记密码，忘记密码无法恢复。也可导出普通 JSON 文件。</p>
+<label>备份密码（至少 8 位）<input id="backupPassword" type="password" minlength="8" autocomplete="new-password"></label>
+<button type="button" class="primary full" id="encryptedExport">导出加密备份</button>
+<button type="button" class="secondary full" id="jsonExport">导出普通 JSON 备份</button>
+<label class="filepick">选择备份文件恢复<input id="restoreFile" type="file" accept=".json,.llbackup,application/json"></label>
+</form></dialog>
+
+<dialog id="messageDialog"><form method="dialog"><p id="messageText"></p><button class="primary full">知道了</button></form></dialog>
+<script src="app.js"></script>
+</body></html>
